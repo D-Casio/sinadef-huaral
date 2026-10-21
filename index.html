@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SINADEF Huaral - Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { color: #17354A; }
+    .card { background: #f8f9fa; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+    #estado { color: #666; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>SINADEF · Huaral</h1>
+  <p id="estado">Cargando datos...</p>
+  <div class="card">
+    <canvas id="grafico" height="120"></canvas>
+  </div>
+
+  <script>
+    async function cargar() {
+      const el = document.getElementById('estado');
+      try {
+        const resp = await fetch('datos.json?t=' + Date.now()); // evitar caché
+        if (!resp.ok) throw new Error('JSON no encontrado');
+        const data = await resp.json();
+        if (data.error) { el.textContent = 'Sin datos: ' + data.error; return; }
+        
+        el.textContent = 'Actualizado: ' + new Date(data.actualizado).toLocaleString('es-PE');
+        
+        const labels = data.resumen.map(r => r.ambito);
+        const homicidios = data.resumen.map(r => r.paf_homicidio);
+        const totales = data.resumen.map(r => r.paf_total);
+        
+        new Chart(document.getElementById('grafico'), {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              { label: 'Agresión PAF (X93-X95)', data: homicidios, backgroundColor: '#B83E45' },
+              { label: 'PAF total', data: totales, backgroundColor: '#D98E32' }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { title: { display: true, text: 'Huaral: defunciones con evidencia de arma de fuego' } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Defunciones' } } }
+          }
+        });
+      } catch (e) {
+        el.textContent = 'Error al cargar datos. Ejecuta el workflow de GitHub Actions primero.';
+        console.error(e);
+      }
+    }
+    cargar();
+  </script>
+</body>
+</html>
