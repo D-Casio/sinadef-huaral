@@ -1,0 +1,33 @@
+name: Actualizar dashboard SINADEF Huaral
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # UTC, diario
+  workflow_dispatch:        # Permite activación manual
+
+permissions:
+  contents: write           # Permite hacer commit del JSON
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+      
+      - name: Ejecutar análisis
+        run: python sinadef_huaral.py
+      
+      - name: Hacer commit del JSON actualizado
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add datos.json
+          git diff --staged --quiet || git commit -m "Actualización automática $(date -u +%F)"
+          git push
